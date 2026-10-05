@@ -1,6 +1,6 @@
 # Autism IR Search
 
-A classical information retrieval demonstrator for the supplied multimodal autism sample dataset. It uses sample-level documents, Boolean retrieval over an inverted index, and a TF-IDF vector space model with cosine similarity. It does not use embeddings, an LLM, or a vector database. The original dataset is read-only from the application's perspective.
+A classical information retrieval demonstrator for the supplied multimodal autism sample dataset. It uses sample-level documents, Boolean retrieval over an inverted index, a TF-IDF vector space model with cosine similarity, and a probabilistic query-likelihood model. It does not use embeddings, an LLM, or a vector database. The original dataset is read-only from the application's perspective.
 
 ## Dataset analysis
 
@@ -17,7 +17,8 @@ Browser (React + Vite)
        ├── document_builder → one sample document + 4 file references
        ├── preprocessing → Unicode normalization, lowercasing, tokenization, stopword removal
        ├── BooleanModel → term-to-document inverted index + AND/OR/NOT
-       └── VectorModel → TF-IDF document/query vectors + cosine ranking
+       ├── VectorModel → TF-IDF document/query vectors + cosine ranking
+       └── ProbabilisticModel → smoothed query likelihood + heap-based probability ranking
 ```
 
 One IR document is one `sample_id` because labels, descriptions, tags, and the precomputed search text are sample-level. Its per-modality file objects retain indexed path, resolved on-disk path, filename, type, and existence. The implementation reads only the supplied data; it does not create an index file in or modify the dataset.
@@ -51,6 +52,7 @@ Set `VITE_API_URL` before starting Vite to point to a non-default backend (defau
 - `GET /dataset/stats` — totals, available modalities, labels, file types, missing references.
 - `POST /search/boolean` — `{"query":"autism AND eye","modality":"all","top_k":10}`. Supports terms, parentheses, AND, OR, NOT (NOT > AND > OR). Missing terms yield no matches; invalid/empty syntax returns HTTP 400.
 - `POST /search/vector` — `{"query":"child autism screening","modality":"image","top_k":10}`. Returns positive cosine matches ranked descending; unknown words contribute no weight.
+- `POST /search/probabilistic` — `{"query":"child autism screening","modality":"all","top_k":10}`. Returns candidates ranked by `P(document | query)` with the probability exposed in both `probability` and `score`.
 - `GET /document/{document_id}` — complete sample record and file details.
 - `GET /file/{document_id}/{modality}` — streams the source file when present, including image/audio previews.
 
@@ -58,10 +60,10 @@ Modality filters are `all`, `image`, `voice`, `motion`, and `physio`. Search ter
 
 ## Retrieval and evaluation
 
-The Boolean model stores each normalized term's document-ID set. Operators combine sets; NOT complements against the 100-document universe. Vector retrieval uses log term frequency `(1 + ln(tf))`, smoothed IDF `ln((1+N)/(1+df))+1`, and cosine similarity. Top-K is configurable up to 100. Since the dataset provides no judged relevance ground truth, scores from retrieval must not be presented as evaluation results. `backend/evaluation.py` computes precision, recall, F1, Precision@K, and Recall@K from an explicitly curated query-to-relevant-ID mapping. Add such judgments after human review; do not infer them from the class labels. Useful query candidates based on actual metadata include `mild_asd`, `autism AND voice`, `typical OR moderate_asd`, and `severe ASD level 3`.
+The Boolean model stores each normalized term's document-ID set. Operators combine sets; NOT complements against the 100-document universe. Vector retrieval uses log term frequency `(1 + ln(tf))`, smoothed IDF `ln((1+N)/(1+df))+1`, and cosine similarity. The probabilistic model calculates `P(query | document)` with a multinomial language model and Laplace smoothing (`alpha=1`), then normalizes likelihoods with a uniform prior to estimate `P(document | query)`. It uses a heap-backed top-K selection to rank the candidates. Probabilities are relative across documents matching at least one query term; they are not clinical risk or diagnosis probabilities. Since the dataset provides no judged relevance ground truth, retrieval scores must not be presented as evaluation results. `backend/evaluation.py` computes precision, recall, F1, Precision@K, and Recall@K from an explicitly curated query-to-relevant-ID mapping. Add such judgments after human review; do not infer them from the class labels. Useful query candidates based on actual metadata include `mild_asd`, `autism AND voice`, `typical OR moderate_asd`, and `severe ASD level 3`.
 
 ## UI and integration
 
-The responsive interface offers a centered search bar, model switch, modality and Top-K controls, actual dataset counts/labels, ranked result cards, match explanations, local recent-search history, and a record side modal with metadata, available image preview, audio player, and downloadable/openable files. It is a separate frontend and API, suitable for linking from an existing screening application or embedding its search page; configure the dataset path and CORS origin to match deployment. Search results describe dataset records and are not clinical screening decisions.
+The responsive interface offers a centered search bar, Boolean/vector/probabilistic model switch, modality and Top-K controls, actual dataset counts/labels, ranked result cards, match explanations, local recent-search history, and a record side modal with metadata, available image preview, audio player, and downloadable/openable files. Its blue, teal, violet, coral, and gold accents draw on the neurodiversity infinity spectrum while keeping high-contrast text and controls. It is a separate frontend and API, suitable for linking from an existing screening application or embedding its search page; configure the dataset path and CORS origin to match deployment. Search results describe dataset records and are not clinical screening decisions.
 
 Run the repository checks with `python3 -m unittest discover -s backend/tests -v`. The test suite exercises data loading/building, preprocessing, Boolean operators and invalid queries, vector scores/top-K, modality filters, empty results, and evaluation metrics. FastAPI endpoint schemas are documented in `/docs` and endpoint smoke checks require installing backend requirements first.

@@ -2,6 +2,7 @@ from .data_loader import load_dataset
 from .document_builder import build_documents
 from .boolean_model import BooleanModel
 from .vector_model import VectorModel
+from .probabilistic_model import ProbabilisticModel
 
 class SearchEngine:
     def __init__(self, dataset_dir):
@@ -10,6 +11,7 @@ class SearchEngine:
         self.by_id={d["document_id"]:d for d in self.documents}
         self.boolean=BooleanModel(self.documents)
         self.vector=VectorModel(self.documents)
+        self.probabilistic=ProbabilisticModel(self.documents)
 
     def stats(self):
         labels=sorted({str(d["label"]) for d in self.documents if d["label"]})
