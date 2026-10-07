@@ -64,6 +64,11 @@ body {
 .meter { background: #ececf5; }
 .meter i { background: linear-gradient(90deg, var(--blue), var(--teal), var(--violet), #ca7184, #d6a338); }
 .matched em { background: #eeeafa; color: #59418d; }
+.bim-help { margin: 10px 0 0; color: #58617d; font-size: 12px; line-height: 1.5; }
+.feedback-actions { display: flex; gap: 8px; margin: 12px 0; }
+.feedback-actions button { border: 1px solid #dfe2ef; border-radius: 5px; background: #fbfbfe; color: #465575; padding: 6px 9px; font-size: 11px; }
+.feedback-actions button:hover, .feedback-actions button.selected { border-color: #168c91; background: #e6f5f3; color: #126a70; }
+.feedback-actions button.selected.negative { border-color: #be5369; background: #fff0f3; color: #983b50; }
 .card-footer { border-color: #ececf4; }
 .fileline { color: #46516d; }
 .open-btn { color: #564293; }

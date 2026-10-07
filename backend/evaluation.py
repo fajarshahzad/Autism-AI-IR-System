@@ -9,6 +9,10 @@ def evaluate(retrieved_ids, relevant_ids, k=None):
 def evaluate_queries(engine, judgments, model="vector_space", top_k=10):
     reports={}
     for query, relevant_ids in judgments.items():
-        results=(engine.vector.search(query,top_k) if model=="vector_space" else engine.boolean.search(query))
+        if model=="vector_space": results=engine.vector.search(query,top_k)
+        elif model=="probabilistic_query_likelihood": results=engine.probabilistic.search(query,top_k)
+        elif model=="binary_independence": results=engine.bim.search(query,top_k)
+        elif model=="boolean": results=engine.boolean.search(query)
+        else: raise ValueError(f"Unknown retrieval model: {model}")
         reports[query]=evaluate([x["document_id"] for x in results],relevant_ids,top_k)
     return reports

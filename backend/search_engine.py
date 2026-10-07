@@ -3,6 +3,7 @@ from .document_builder import build_documents
 from .boolean_model import BooleanModel
 from .vector_model import VectorModel
 from .probabilistic_model import ProbabilisticModel
+from .bim_model import BinaryIndependenceModel
 
 class SearchEngine:
     def __init__(self, dataset_dir):
@@ -12,6 +13,7 @@ class SearchEngine:
         self.boolean=BooleanModel(self.documents)
         self.vector=VectorModel(self.documents)
         self.probabilistic=ProbabilisticModel(self.documents)
+        self.bim=BinaryIndependenceModel(self.documents)
 
     def stats(self):
         labels=sorted({str(d["label"]) for d in self.documents if d["label"]})
