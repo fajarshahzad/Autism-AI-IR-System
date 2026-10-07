@@ -65,6 +65,12 @@ def overlap_list_search(req:SearchRequest):
     except ValueError as e: raise HTTPException(400,str(e))
     return {"query":req.query,"model":"overlap_lists","total_results":len(results),"results":results[:req.top_k]}
 
+@app.post("/search/non-overlap-lists")
+def non_overlap_list_search(req:SearchRequest):
+    try: results=engine.non_overlap_lists.search(req.query,100,req.modality)
+    except ValueError as e: raise HTTPException(400,str(e))
+    return {"query":req.query,"model":"non_overlap_lists","total_results":len(results),"results":results[:req.top_k]}
+
 @app.get("/document/{document_id}")
 def document(document_id:str):
     result=engine.by_id.get(document_id)
