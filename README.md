@@ -1,6 +1,6 @@
 # Autism IR Search
 
-A classical information retrieval demonstrator for the supplied multimodal autism sample dataset. It uses sample-level documents, Boolean retrieval over an inverted index, a TF-IDF vector space model with cosine similarity, a probabilistic query-likelihood model, a Binary Independence Model (BIM), BM25 ranking, and overlapping/non-overlapping structured-region lists. It does not use embeddings, an LLM, or a vector database. The original dataset is read-only from the application's perspective.
+A classical information retrieval demonstrator for the supplied multimodal autism sample dataset. It uses sample-level documents, Boolean retrieval over an inverted index, a TF-IDF vector space model with cosine similarity, a probabilistic query-likelihood model, a Binary Independence Model (BIM), BM25 ranking, overlapping/non-overlapping structured-region lists, and a Proximal Nodes model. It does not use embeddings, an LLM, or a vector database. The original dataset is read-only from the application's perspective.
 
 ## Dataset analysis
 
@@ -22,7 +22,8 @@ Browser (React + Vite)
        ├── BinaryIndependenceModel → binary term evidence + RSJ relevance weights
        ├── BM25Model → IDF + saturated term frequency + document-length normalization
        ├── OverlapListModel → nested sample/metadata regions + region-aware postings
-       └── NonOverlapListModel → disjoint metadata regions + field postings
+       ├── NonOverlapListModel → disjoint metadata regions + field postings
+       └── ProximalNodesModel → record/field/sentence hierarchy + positional postings
 ```
 
 One IR document is one `sample_id` because labels, descriptions, tags, and the precomputed search text are sample-level. Its per-modality file objects retain indexed path, resolved on-disk path, filename, type, and existence. The implementation reads only the supplied data; it does not create an index file in or modify the dataset.
@@ -61,6 +62,7 @@ Set `VITE_API_URL` before starting Vite to point to a non-default backend (defau
 - `POST /search/bm25` — `{"query":"child autism screening","modality":"all","top_k":10}`. Returns documents ranked by BM25 score; scores are ranking values, not probabilities.
 - `POST /search/overlap-lists` — `{"query":"child autism screening","modality":"all","top_k":10}`. Searches nested sample and metadata-field regions and returns matched terms, matched regions, and a region-coverage count. The count is an explanatory ordering value, not a probability or canonical relevance score.
 - `POST /search/non-overlap-lists` — same request shape. Searches each metadata field as a separate disjoint region and returns matched terms, matched fields, and a field-coverage count. The count is an explanatory ordering value, not a probability or canonical relevance score.
+- `POST /search/proximal-nodes` — same request shape. Searches record, field, and description-sentence nodes using token positions. Results favor nodes that contain more query terms in a tighter positional window and report the best node, its parent, and the window width in tokens.
 - `GET /document/{document_id}` — complete sample record and file details.
 - `GET /file/{document_id}/{modality}` — streams the source file when present, including image/audio previews.
 
@@ -72,6 +74,6 @@ The Boolean model stores each normalized term's document-ID set. Operators combi
 
 ## UI and integration
 
-The responsive interface offers a centered search bar, Boolean/vector/query-likelihood/BIM/BM25/overlap-list/non-overlap-list model switch, modality and Top-K controls, actual dataset counts/labels, ranked result cards, match explanations, local recent-search history, and a record side modal with metadata, available image preview, audio player, and downloadable/openable files. The overlap-list model treats each sample as a parent region containing separate label, description, severity, status, tag, and modality regions; the non-overlap-list model indexes those fields separately without a parent region. Both show which fields matched and use field coverage as an explanatory result ordering. BIM result cards let a user mark samples relevant or not relevant and rerank with that feedback. Its blue, teal, violet, coral, and gold accents draw on the neurodiversity infinity spectrum while keeping high-contrast text and controls. It is a separate frontend and API, suitable for linking from an existing screening application or embedding its search page; configure the dataset path and CORS origin to match deployment. Search results describe dataset records and are not clinical screening decisions.
+The responsive interface offers a centered search bar, Boolean/vector/query-likelihood/BIM/BM25/overlap-list/non-overlap-list/Proximal Nodes model switch, modality and Top-K controls, actual dataset counts/labels, ranked result cards, match explanations, local recent-search history, and a record side modal with metadata, available image preview, audio player, and downloadable/openable files. The overlap-list model treats each sample as a parent region containing separate label, description, severity, status, tag, and modality regions; the non-overlap-list model indexes those fields separately without a parent region. The Proximal Nodes model further adds sentence nodes under descriptions and uses token positions to favor query terms that occur near each other in a node. BIM result cards let a user mark samples relevant or not relevant and rerank with that feedback. Its blue, teal, violet, coral, and gold accents draw on the neurodiversity infinity spectrum while keeping high-contrast text and controls. It is a separate frontend and API, suitable for linking from an existing screening application or embedding its search page; configure the dataset path and CORS origin to match deployment. Search results describe dataset records and are not clinical screening decisions.
 
 Run the repository checks with `python3 -m unittest discover -s backend/tests -v`. The test suite exercises data loading/building, preprocessing, Boolean operators and invalid queries, vector scores/top-K, modality filters, empty results, and evaluation metrics. FastAPI endpoint schemas are documented in `/docs` and endpoint smoke checks require installing backend requirements first.
