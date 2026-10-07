@@ -9,7 +9,7 @@ from .boolean_model import QueryError
 
 DEFAULT_DATASET=Path(__file__).resolve().parents[1]/"Dataset for autism copy"
 engine=SearchEngine(os.getenv("AUTISM_DATASET_DIR",str(DEFAULT_DATASET)))
-app=FastAPI(title="Autism IR Search API",version="1.0.0",description="Boolean, TF-IDF cosine, query-likelihood, BIM, and BM25 search over the supplied multimodal sample dataset.")
+app=FastAPI(title="Autism IR Search API",version="1.0.0",description="Boolean, TF-IDF cosine, query-likelihood, BIM, BM25, and overlapping-region search over the supplied multimodal sample dataset.")
 app.add_middleware(CORSMiddleware,allow_origins=[x.strip() for x in os.getenv("CORS_ORIGINS","http://localhost:5173").split(",")],allow_methods=["*"],allow_headers=["*"])
 
 class SearchRequest(BaseModel):
@@ -58,6 +58,12 @@ def bm25_search(req:SearchRequest):
     try: results=engine.bm25.search(req.query,100,req.modality)
     except ValueError as e: raise HTTPException(400,str(e))
     return {"query":req.query,"model":"bm25","total_results":len(results),"results":results[:req.top_k]}
+
+@app.post("/search/overlap-lists")
+def overlap_list_search(req:SearchRequest):
+    try: results=engine.overlap_lists.search(req.query,100,req.modality)
+    except ValueError as e: raise HTTPException(400,str(e))
+    return {"query":req.query,"model":"overlap_lists","total_results":len(results),"results":results[:req.top_k]}
 
 @app.get("/document/{document_id}")
 def document(document_id:str):

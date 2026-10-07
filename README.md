@@ -1,6 +1,6 @@
 # Autism IR Search
 
-A classical information retrieval demonstrator for the supplied multimodal autism sample dataset. It uses sample-level documents, Boolean retrieval over an inverted index, a TF-IDF vector space model with cosine similarity, a probabilistic query-likelihood model, a Binary Independence Model (BIM), and BM25 ranking. It does not use embeddings, an LLM, or a vector database. The original dataset is read-only from the application's perspective.
+A classical information retrieval demonstrator for the supplied multimodal autism sample dataset. It uses sample-level documents, Boolean retrieval over an inverted index, a TF-IDF vector space model with cosine similarity, a probabilistic query-likelihood model, a Binary Independence Model (BIM), BM25 ranking, and overlapping structured-region lists. It does not use embeddings, an LLM, or a vector database. The original dataset is read-only from the application's perspective.
 
 ## Dataset analysis
 
@@ -20,7 +20,8 @@ Browser (React + Vite)
        ├── VectorModel → TF-IDF document/query vectors + cosine ranking
        ├── ProbabilisticModel → smoothed query likelihood + heap-based probability ranking
        ├── BinaryIndependenceModel → binary term evidence + RSJ relevance weights
-       └── BM25Model → IDF + saturated term frequency + document-length normalization
+       ├── BM25Model → IDF + saturated term frequency + document-length normalization
+       └── OverlapListModel → nested sample/metadata regions + region-aware postings
 ```
 
 One IR document is one `sample_id` because labels, descriptions, tags, and the precomputed search text are sample-level. Its per-modality file objects retain indexed path, resolved on-disk path, filename, type, and existence. The implementation reads only the supplied data; it does not create an index file in or modify the dataset.
@@ -57,6 +58,7 @@ Set `VITE_API_URL` before starting Vite to point to a non-default backend (defau
 - `POST /search/probabilistic` — `{"query":"child autism screening","modality":"all","top_k":10}`. Returns candidates ranked by `P(document | query)` with the probability exposed in both `probability` and `score`.
 - `POST /search/bim` — accepts the same query, modality, and Top-K fields, plus optional `relevant_ids` and `non_relevant_ids` arrays for query-specific relevance feedback. Without feedback, it uses a collection-frequency initial estimate; its `score` is an RSJ weight, not a probability.
 - `POST /search/bm25` — `{"query":"child autism screening","modality":"all","top_k":10}`. Returns documents ranked by BM25 score; scores are ranking values, not probabilities.
+- `POST /search/overlap-lists` — `{"query":"child autism screening","modality":"all","top_k":10}`. Searches nested sample and metadata-field regions and returns matched terms, matched regions, and a region-coverage count. The count is an explanatory ordering value, not a probability or canonical relevance score.
 - `GET /document/{document_id}` — complete sample record and file details.
 - `GET /file/{document_id}/{modality}` — streams the source file when present, including image/audio previews.
 
@@ -68,6 +70,6 @@ The Boolean model stores each normalized term's document-ID set. Operators combi
 
 ## UI and integration
 
-The responsive interface offers a centered search bar, Boolean/vector/query-likelihood/BIM/BM25 model switch, modality and Top-K controls, actual dataset counts/labels, ranked result cards, match explanations, local recent-search history, and a record side modal with metadata, available image preview, audio player, and downloadable/openable files. BIM result cards let a user mark samples relevant or not relevant and rerank with that feedback. Its blue, teal, violet, coral, and gold accents draw on the neurodiversity infinity spectrum while keeping high-contrast text and controls. It is a separate frontend and API, suitable for linking from an existing screening application or embedding its search page; configure the dataset path and CORS origin to match deployment. Search results describe dataset records and are not clinical screening decisions.
+The responsive interface offers a centered search bar, Boolean/vector/query-likelihood/BIM/BM25/overlap-list model switch, modality and Top-K controls, actual dataset counts/labels, ranked result cards, match explanations, local recent-search history, and a record side modal with metadata, available image preview, audio player, and downloadable/openable files. The overlap-list model treats each sample as a parent region containing separate label, description, severity, status, tag, and modality regions; its result cards show which regions matched. BIM result cards let a user mark samples relevant or not relevant and rerank with that feedback. Its blue, teal, violet, coral, and gold accents draw on the neurodiversity infinity spectrum while keeping high-contrast text and controls. It is a separate frontend and API, suitable for linking from an existing screening application or embedding its search page; configure the dataset path and CORS origin to match deployment. Search results describe dataset records and are not clinical screening decisions.
 
 Run the repository checks with `python3 -m unittest discover -s backend/tests -v`. The test suite exercises data loading/building, preprocessing, Boolean operators and invalid queries, vector scores/top-K, modality filters, empty results, and evaluation metrics. FastAPI endpoint schemas are documented in `/docs` and endpoint smoke checks require installing backend requirements first.
