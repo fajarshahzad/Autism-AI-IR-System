@@ -64,6 +64,26 @@ main {
     color: #7b8580
 }
 
+.page-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    margin-right: 28px
+}
+
+.page-nav a {
+    padding: 9px 12px;
+    border-radius: 6px;
+    color: #65706b;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600
+}
+
+.page-nav a:hover { background: #eef0fa; color: #514083 }
+.page-nav a.active { background: #eeeafa; color: #514083 }
+
 .nav-right,
 .eyebrow,
 .control-label,
@@ -709,8 +729,15 @@ footer {
 
 @media(max-width:700px) {
     .nav {
-        padding: 0 18px
+        height: auto;
+        min-height: 66px;
+        padding: 12px 18px;
+        flex-wrap: wrap;
+        gap: 8px
     }
+
+    .page-nav { order: 3; width: 100%; margin: 0; justify-content: center }
+    .page-nav a { padding: 8px 10px; font-size: 11px }
 
     .nav-right {
         font-size: 8px

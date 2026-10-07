@@ -24,6 +24,8 @@ body {
 .nav { background: #ffffffd9; border-color: var(--line); }
 .brand-mark { background: linear-gradient(135deg, var(--teal), var(--blue) 52%, var(--violet)); color: white; }
 .brand-light { color: var(--violet); }
+.page-nav a { color: #515c79; }
+.page-nav a:hover, .page-nav a.active { color: #473579; background: #eeeafa; }
 .nav-right, .control-label, .model-note, .section-kicker, footer { color: var(--muted); }
 .live-dot, .eyebrow span { background: linear-gradient(135deg, var(--teal), var(--blue), var(--violet), var(--coral), var(--gold)); }
 .eyebrow { color: #405d9b; }
